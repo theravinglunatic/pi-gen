@@ -1,2 +1,23 @@
-rpd-preferences
-rpd-theme
+# Media playback
+mpv
+libmpv-dev
+
+# Network management
+network-manager
+avahi-daemon
+avahi-utils
+
+# GPIO and hardware
+python3-gpiozero
+python3-lgpio
+
+# USB automount
+udisks2
+
+# System monitoring and utilities
+htop
+tmux
+vim
+git
+curl
+wget

@@ -1,2 +1,14 @@
-rpd-wayland-core
-rpd-x-core
+# Python development (minimal install)
+python3
+python3-pip
+python3-dev
+build-essential
+
+# Node.js and npm (minimal install)
+nodejs
+npm
+
+# Python packages for FacelessWebServer
+python3-websockets
+python3-pil
+python3-psutil

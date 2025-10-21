@@ -1,0 +1,17 @@
+[connection]
+id=Development-eth1
+uuid=14ed9f06-af87-3b1c-a899-ea0878efa547
+type=ethernet
+autoconnect-priority=-999
+interface-name=eth1
+
+[ethernet]
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]

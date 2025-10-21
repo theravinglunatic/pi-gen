@@ -1,0 +1,17 @@
+[Unit]
+Description=FacelessWebServer First Boot Setup
+After=network-online.target local-fs.target
+Wants=network-online.target
+ConditionPathExists=!/var/lib/faceless-first-boot-done
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/faceless-first-boot.sh
+StandardOutput=journal
+StandardError=journal
+RemainAfterExit=yes
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

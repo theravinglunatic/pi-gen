@@ -1,0 +1,27 @@
+[Unit]
+Description=No Face Core Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/noface/facelessWebServer/no_face_core/main.py
+WorkingDirectory=/home/noface/facelessWebServer
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=5
+KillSignal=SIGINT
+SendSIGKILL=yes
+User=noface
+Group=noface
+
+# Environment variables (for future GUI/audio if needed)
+Environment="PYTHONUNBUFFERED=1"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+
+# Allow binding to privileged ports (port 80)
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
