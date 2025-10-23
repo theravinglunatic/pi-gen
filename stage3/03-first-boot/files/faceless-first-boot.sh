@@ -25,51 +25,63 @@ if [ -f "$COMPLETION_MARKER" ]; then
     exit 0
 fi
 
-# Wait for USB drive to be mounted
-log "📀 Waiting for USB drive..."
-USB_MOUNT=""
-MAX_WAIT=120
-WAITED=0
+############################################################
+# Robust USB discovery and self-mount (Lite images have no
+# desktop automounter, so /media/noface/* won't appear).
+############################################################
 
-# Check common mount points
-while [ $WAITED -lt $MAX_WAIT ]; do
-    # Check udisks2 automount locations
-    for MOUNT in /media/noface/*; do
-        if [ -d "$MOUNT" ]; then
-            USB_MOUNT="$MOUNT"
-            break
-        fi
-    done
-    
-    # Check traditional mount points
-    if [ -z "$USB_MOUNT" ]; then
-        for MOUNT in /media/usb0 /media/usb /mnt/usb; do
-            if [ -d "$MOUNT" ] && mountpoint -q "$MOUNT" 2>/dev/null; then
-                USB_MOUNT="$MOUNT"
-                break
+USB_MOUNT="/mnt/usb"
+MAX_WAIT=180
+SLEEP=2
+install -d -m 755 "$USB_MOUNT"
+
+log "📀 Waiting for USB drive (will auto-mount if needed)..."
+
+find_usb_and_mount() {
+    local dev type rm fstype opts
+    local deadline=$(( $(date +%s) + MAX_WAIT ))
+    while [ $(date +%s) -lt $deadline ]; do
+        while read -r dev type rm fstype; do
+            [ "$type" = "part" ] || continue
+            [ "$rm" = "1" ] || continue
+            # Accept common FS; if unknown, try auto anyway
+            case "$fstype" in
+                vfat|exfat|ext4|ntfs|ntfs3|ntfs-3g|*) ;;
+            esac
+
+            # Choose mount options by FS type
+            opts="-t auto"
+            case "$fstype" in
+                vfat|exfat|ntfs|ntfs3|ntfs-3g)
+                    opts="-o uid=noface,gid=noface,umask=022 -t auto"
+                    ;;
+            esac
+
+            # Try to mount to USB_MOUNT
+            mountpoint -q "$USB_MOUNT" && umount "$USB_MOUNT" 2>/dev/null || true
+            if mount $opts "$dev" "$USB_MOUNT" 2>/dev/null; then
+                if [ -d "$USB_MOUNT/Videos" ] && [ -f "$USB_MOUNT/.deploy/deploy_key" ]; then
+                    log "✓ USB mounted from $dev at: $USB_MOUNT"
+                    return 0
+                fi
+                # Not the expected stick; unmount and keep searching
+                umount "$USB_MOUNT" 2>/dev/null || true
             fi
-        done
-    fi
-    
-    # Exit loop if found
-    if [ -n "$USB_MOUNT" ] && [ -d "$USB_MOUNT/Videos" ]; then
-        log "✓ USB drive found at: $USB_MOUNT"
-        break
-    fi
-    
-    sleep 2
-    WAITED=$((WAITED + 2))
-    USB_MOUNT=""
-done
+        done < <(lsblk -rpno PATH,TYPE,RM,FSTYPE)
 
-if [ -z "$USB_MOUNT" ]; then
+        sleep "$SLEEP"
+    done
+    return 1
+}
+
+if ! find_usb_and_mount; then
     log "❌ ERROR: USB drive not found after ${MAX_WAIT}s"
     log ""
     log "Expected USB structure:"
-    log "  /media/noface/<UUID>/"
-    log "  ├── Videos/              (video content)"
+    log "  $USB_MOUNT/"
+    log "  ├── Videos              (video content)"
     log "  └── .deploy/"
-    log "      └── deploy_key       (SSH private key)"
+    log "      └── deploy_key      (SSH private key)"
     log ""
     log "Please:"
     log "  1. Insert USB drive with Videos/ directory"
@@ -182,7 +194,7 @@ log "📦 Installing Node.js dependencies..."
 if [ -d "no_face_remote_client" ]; then
     cd "$APP_DIR/no_face_remote_client"
     if [ -f "package.json" ]; then
-        sudo -u noface npm install 2>&1 | tee -a "$LOG_FILE"
+        sudo -u noface npm ci 2>&1 | tee -a "$LOG_FILE" || sudo -u noface npm install 2>&1 | tee -a "$LOG_FILE"
         log "✓ Node.js dependencies installed"
     else
         log "⚠️  No package.json found in no_face_remote_client/"

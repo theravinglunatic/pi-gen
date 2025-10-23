@@ -13,6 +13,9 @@ python3-lgpio
 
 # USB automount
 udisks2
+# Filesystem support for common USB sticks
+exfatprogs
+ntfs-3g
 
 # System monitoring and utilities
 htop

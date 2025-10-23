@@ -1,0 +1,33 @@
+Checking native armhf executable support...
+armhf: not supported on this machine/kernel
+WARNING: Only a native build environment is supported. Checking emulated support...
+armhf: ok
+User rename on the first boot is disabled
+Be advised of the security risks linked to shipping a device with default username/password set.
+[01:12:37] Begin /home/lunatic/pi-gen
+[01:12:37] Begin /home/lunatic/pi-gen/stage0
+[01:12:37] Begin /home/lunatic/pi-gen/stage0/prerun.sh
+I: Target architecture can be executed
+I: Retrieving InRelease 
+I: Checking Release signature
+I: Valid Release signature (key id A0DA38D0D76E8B5D638872819165938D90FDDD2E)
+I: Retrieving Packages 
+I: Validating Packages 
+I: Retrieving Packages 
+I: Validating Packages 
+I: Retrieving Packages 
+I: Validating Packages 
+I: Resolving dependencies of required packages...
+I: Resolving dependencies of base packages...
+I: Checking component main on http://raspbian.raspberrypi.com/raspbian...
+I: Retrieving adduser 3.152
+I: Validating adduser 3.152
+I: Retrieving apt 3.0.3
+I: Validating apt 3.0.3
+I: Retrieving apt-utils 3.0.3
+I: Validating apt-utils 3.0.3
+I: Retrieving base-files 13.8+rpi1+deb13u1
+I: Validating base-files 13.8+rpi1+deb13u1
+I: Retrieving base-passwd 3.6.7
+I: Validating base-passwd 3.6.7
+I: Retrieving bash 5.2.37-2
