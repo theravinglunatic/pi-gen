@@ -52,10 +52,9 @@ systemctl enable udisks2
 # after repository is cloned
 EOF
 
-# Create application directory placeholder
-echo "📁 Creating application directory..."
-mkdir -p "${ROOTFS_DIR}/home/noface/facelessWebServer"
-chown 1000:1000 "${ROOTFS_DIR}/home/noface/facelessWebServer"
+# Note: Do NOT pre-create the application directory. It will be created by
+# the first-boot script during 'git clone'. Pre-creating it without a .git
+# directory can interfere with repo detection/update logic.
 
 # Configure Python pip for system-wide installs (no venv needed)
 echo "🐍 Configuring Python pip..."

@@ -60,7 +60,8 @@ find_usb_and_mount() {
             # Try to mount to USB_MOUNT
             mountpoint -q "$USB_MOUNT" && umount "$USB_MOUNT" 2>/dev/null || true
             if mount $opts "$dev" "$USB_MOUNT" 2>/dev/null; then
-                if [ -d "$USB_MOUNT/Videos" ] && [ -f "$USB_MOUNT/.deploy/deploy_key" ]; then
+                # Accept multiple key filenames
+                if [ -d "$USB_MOUNT/Videos" ] && { [ -f "$USB_MOUNT/.deploy/deploy_key" ] || [ -f "$USB_MOUNT/.deploy/id_ed25519" ] || [ -f "$USB_MOUNT/.deploy/id_rsa" ]; }; then
                     log "✓ USB mounted from $dev at: $USB_MOUNT"
                     return 0
                 fi
@@ -81,19 +82,26 @@ if ! find_usb_and_mount; then
     log "  $USB_MOUNT/"
     log "  ├── Videos              (video content)"
     log "  └── .deploy/"
-    log "      └── deploy_key      (SSH private key)"
+    log "      └── deploy_key | id_ed25519 | id_rsa  (SSH private key)"
     log ""
     log "Please:"
     log "  1. Insert USB drive with Videos/ directory"
-    log "  2. Create .deploy/deploy_key on the USB drive"
+    log "  2. Place a private key under .deploy/ (deploy_key preferred)"
     log "  3. Reboot or run: sudo systemctl start faceless-first-boot.service"
     exit 1
 fi
 
-# Check for deploy key on USB
-USB_KEY="$USB_MOUNT/.deploy/deploy_key"
-if [ ! -f "$USB_KEY" ]; then
-    log "❌ ERROR: Personal SSH key not found at $USB_KEY"
+# Locate an SSH key on USB (.deploy/)
+USB_KEY=""
+for cand in deploy_key id_ed25519 id_rsa; do
+    if [ -f "$USB_MOUNT/.deploy/$cand" ]; then
+        USB_KEY="$USB_MOUNT/.deploy/$cand"
+        break
+    fi
+done
+
+if [ -z "$USB_KEY" ]; then
+    log "❌ ERROR: No SSH key found under $USB_MOUNT/.deploy (looked for: deploy_key, id_ed25519, id_rsa)"
     log ""
     log "To add your personal SSH key to USB:"
     log "  1. On your dev machine, copy your key:"
@@ -107,7 +115,7 @@ if [ ! -f "$USB_KEY" ]; then
     exit 1
 fi
 
-log "✓ Personal SSH key found on USB drive"
+log "✓ Personal SSH key found on USB drive ($(basename "$USB_KEY"))"
 
 # Verify SSH key permissions on USB
 ACTUAL_PERMS=$(stat -c "%a" "$USB_KEY")
@@ -155,15 +163,19 @@ else
     log "   Proceeding with clone attempt..."
 fi
 
-# Clone repository
-log "📥 Cloning FacelessWebServer repository..."
-if [ -d "$APP_DIR" ]; then
-    log "⚠️  Application directory already exists at $APP_DIR"
-    log "   Updating repository..."
-    cd "$APP_DIR"
-    sudo -u noface git pull origin main || sudo -u noface git pull origin master || log "⚠️  Git pull failed, continuing..."
+# Clone or repair repository state
+log "📥 Preparing FacelessWebServer repository..."
+if [ -d "$APP_DIR/.git" ]; then
+    log "   Existing git repository detected; syncing to origin HEAD..."
+    sudo -u noface -H bash -lc "set -e; cd '$APP_DIR'; git remote set-url origin '$REPO_URL' || true; git fetch origin --prune; HEAD_BRANCH=\$(git remote show origin | awk '/HEAD branch/ {print \$NF}'); git reset --hard \"origin/\${HEAD_BRANCH:-main}\"; git submodule update --init --recursive || true"
+    log "✓ Repository updated"
 else
-    sudo -u noface git clone "$REPO_URL" "$APP_DIR" || {
+    if [ -d "$APP_DIR" ]; then
+        log "⚠️  $APP_DIR exists but is not a git repo; moving aside and cloning fresh..."
+        TS=$(date +%s)
+        mv "$APP_DIR" "${APP_DIR}.bak.$TS" || true
+    fi
+    sudo -u noface -H git clone "$REPO_URL" "$APP_DIR" || {
         log "❌ ERROR: Failed to clone repository"
         log "   Check that:"
         log "   1. Personal SSH key on USB is correct"

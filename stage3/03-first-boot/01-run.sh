@@ -27,9 +27,9 @@ This image uses AUTOMATED first-boot setup via USB personal SSH key.
 📋 REQUIRED USB DRIVE STRUCTURE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Your USB drive must have:
+Your USB drive must have (at the root):
 
-/media/noface/<UUID>/
+/ (USB root)
 ├── Videos/                      # Video content (required by app)
 │   ├── video1.mp4
 │   ├── video2.mp4
@@ -37,8 +37,10 @@ Your USB drive must have:
 ├── staticVideos/                # 50% probability selection
 ├── interrupterVideo/            # EAS background video
 ├── interrupterImage/            # Generated overlay images
-└── .deploy/                     # Deploy key directory (HIDDEN)
-    └── deploy_key               # Your personal SSH key (chmod 600)
+└── .deploy/                     # Private key directory (HIDDEN)
+   ├── deploy_key               # Preferred filename (chmod 600)
+   ├── id_ed25519               # Also accepted
+   └── id_rsa                   # Also accepted
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔐 PREPARING YOUR PERSONAL SSH KEY
@@ -55,8 +57,11 @@ full read/write access to the repository.
     # Create hidden deploy directory
     mkdir -p "$USB_PATH/.deploy"
 
-    # Copy YOUR PERSONAL SSH key to USB
-    cp ~/.ssh/id_ed25519 "$USB_PATH/.deploy/deploy_key"
+   # Copy YOUR PERSONAL SSH key to USB (any of these names work)
+   # Preferred name:
+   cp ~/.ssh/id_ed25519 "$USB_PATH/.deploy/deploy_key"
+   # Or, alternatively:
+   # cp ~/.ssh/id_ed25519 "$USB_PATH/.deploy/id_ed25519"
 
     # Set correct permissions (CRITICAL!)
     chmod 600 "$USB_PATH/.deploy/deploy_key"
@@ -82,7 +87,7 @@ Note: Your personal SSH key provides full git access (clone, pull, push)
 5. Power on
 
 AUTOMATIC FIRST-BOOT PROCESS:
-  ⏱️  Boot → Wait for USB drive (up to 2 minutes)
+   ⏱️  Boot → Wait for USB drive (up to 2 minutes)
   🔑 Load personal SSH key from USB
   📥 Clone repository from GitHub (git@github.com:theravinglunatic/facelessWebServer.git)
   🐍 Install Python dependencies
@@ -119,13 +124,14 @@ curl http://localhost
 
 If first-boot fails:
 
-1. Check USB drive is properly mounted:
-   ls /media/noface/*/Videos/
+1. Check USB drive is properly mounted at /mnt/usb:
+   ls -la /mnt/usb
+   ls -la /mnt/usb/Videos
 
-2. Check deploy key exists on USB:
-   ls -la /media/noface/*/.deploy/deploy_key
+2. Check private key exists on USB (any accepted name):
+   ls -la /mnt/usb/.deploy/
 
-3. Verify your personal SSH key has GitHub access:
+3. Verify your personal SSH key has GitHub access (Pi will auto-accept the host key):
    ssh -T git@github.com
 
 4. Check first-boot log for errors:
