@@ -1,0 +1,2 @@
+# Ignore stray wget logs created during manual downloads/tests
+wget-log*
